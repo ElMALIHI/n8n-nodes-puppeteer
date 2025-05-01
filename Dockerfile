@@ -1,48 +1,33 @@
-FROM n8nio/n8n:latest
+FROM docker.n8n.io/n8nio/n8n
 
 USER root
 
-# Install dependencies for Puppeteer + Chromium
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    ca-certificates \
-    fonts-liberation \
-    libappindicator3-1 \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libgdk-pixbuf2.0-0 \
-    libnspr4 \
-    libnss3 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libgbm1 \
-    libgtk-3-0 \
-    libxshmfence1 \
-    xdg-utils \
-    libxss1 \
-    libxtst6 \
-    fonts-noto-color-emoji \
+# Install Chrome dependencies and Chrome
+RUN apk add --no-cache \
     chromium \
-    && apt-get clean
+    nss \
+    glib \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    udev \
+    ttf-liberation \
+    font-noto-emoji
 
-# Puppeteer settings
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# Tell Puppeteer to use installed Chrome instead of downloading it
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-# Install puppeteer custom node
+# Install n8n-nodes-puppeteer in a permanent location
 COPY . /opt/n8n-custom-nodes/node_modules/n8n-nodes-puppeteer
 RUN cd /opt/n8n-custom-nodes/node_modules/n8n-nodes-puppeteer && \
     npm install && \
-    npm run build && \
+		npm run build && \
     chown -R node:node /opt/n8n-custom-nodes
 
-# Custom entrypoint
+# Copy our custom entrypoint
 COPY docker/docker-custom-entrypoint.sh /docker-custom-entrypoint.sh
 RUN chmod +x /docker-custom-entrypoint.sh && \
     chown node:node /docker-custom-entrypoint.sh
